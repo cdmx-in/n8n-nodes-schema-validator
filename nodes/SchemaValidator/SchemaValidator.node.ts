@@ -224,6 +224,13 @@ export class SchemaValidator implements INodeType {
 						default: true,
 						description: 'Whether to include detailed error information in the output',
 					},
+					{
+						displayName: 'Include Original Data',
+						name: 'includeOriginalData',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to include the original input data in the output',
+					},
 				],
 			},
 		],
@@ -244,6 +251,7 @@ export class SchemaValidator implements INodeType {
 			strictMode?: boolean;
 			allErrors?: boolean;
 			includeErrorDetails?: boolean;
+			includeOriginalData?: boolean;
 		};
 
 		// Create AJV instance with configured options
@@ -276,7 +284,7 @@ function executeSingleSchemaMode(
 	validItems: INodeExecutionData[],
 	invalidItems: INodeExecutionData[],
 	ajv: Ajv,
-	options: { includeErrorDetails?: boolean },
+	options: { includeErrorDetails?: boolean; includeOriginalData?: boolean },
 ): void {
 	const schemaJson = context.getNodeParameter('jsonSchema', 0) as string;
 	const dataSource = context.getNodeParameter('dataSource', 0) as DataSource;
@@ -316,26 +324,37 @@ function executeSingleSchemaMode(
 			} else {
 				const errorMessage = formatValidationErrorMessage(result.errors);
 				const outputItem: INodeExecutionData = {
-					json: {
-						...item.json,
-						_validationErrors: options.includeErrorDetails !== false ? result.errors : undefined,
-						_validationMessage: errorMessage,
-					},
+					json: options.includeOriginalData
+						? {
+								...item.json,
+								validationErrors: options.includeErrorDetails !== false ? result.errors : undefined,
+								validationMessage: errorMessage,
+							}
+						: {
+								validationErrors: options.includeErrorDetails !== false ? result.errors : undefined,
+								validationMessage: errorMessage,
+							},
 					pairedItem: itemIndex,
 				};
-				if (item.binary) {
+				if (options.includeOriginalData && item.binary) {
 					outputItem.binary = item.binary;
 				}
 				invalidItems.push(outputItem);
 			}
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : String(error);
+			const errorJson = options.includeOriginalData
+				? {
+						...item.json,
+						validationErrors: [{ field: '/', message: errorMessage, keyword: 'parse', params: {} }],
+						validationMessage: errorMessage,
+					}
+				: {
+						validationErrors: [{ field: '/', message: errorMessage, keyword: 'parse', params: {} }],
+						validationMessage: errorMessage,
+					};
 			invalidItems.push({
-				json: {
-					...item.json,
-					_validationErrors: [{ field: '/', message: errorMessage, keyword: 'parse', params: {} }],
-					_validationMessage: errorMessage,
-				},
+				json: errorJson,
 				pairedItem: itemIndex,
 			});
 		}
@@ -351,7 +370,7 @@ function executeMultipleSchemaMode(
 	validItems: INodeExecutionData[],
 	invalidItems: INodeExecutionData[],
 	ajv: Ajv,
-	options: { includeErrorDetails?: boolean },
+	options: { includeErrorDetails?: boolean; includeOriginalData?: boolean },
 ): void {
 	const schemasParam = context.getNodeParameter('schemas', 0) as {
 		schemaItems?: Array<{
@@ -458,14 +477,19 @@ function executeMultipleSchemaMode(
 			).join('; ');
 
 			const outputItem: INodeExecutionData = {
-				json: {
-					...item.json,
-					_validationResults: options.includeErrorDetails !== false ? schemaResults : undefined,
-					_validationMessage: errorMessages,
-				},
+				json: options.includeOriginalData
+					? {
+							...item.json,
+							validationResults: options.includeErrorDetails !== false ? schemaResults : undefined,
+							validationMessage: errorMessages,
+						}
+					: {
+							validationResults: options.includeErrorDetails !== false ? schemaResults : undefined,
+							validationMessage: errorMessages,
+						},
 				pairedItem: itemIndex,
 			};
-			if (item.binary) {
+			if (options.includeOriginalData && item.binary) {
 				outputItem.binary = item.binary;
 			}
 			invalidItems.push(outputItem);
