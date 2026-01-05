@@ -1,5 +1,5 @@
 {
-  "name": "n8n-nodes-schema-validator",
+  "name": "@cdmx/n8n-nodes-schema-validator",
   "version": "0.1.0",
   "description": "AJV JSON Schema validation node for n8n workflows with support for multiple schemas, formats, and enhanced error messages",
   "keywords": [
