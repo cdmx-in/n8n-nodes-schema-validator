@@ -42,10 +42,20 @@ export function extractDataToValidate(
 /**
  * Extracts data from a specific JSON path within the item.
  * @param item Input item
- * @param path JSON path (e.g., 'data.user' or 'items[0]')
+ * @param path JSON path (e.g., 'data.user' or 'items[0]') or direct data value
  * @returns Extracted data or undefined if path doesn't exist
  */
-export function extractDataFromPath(item: INodeExecutionData, path: string): unknown {
+export function extractDataFromPath(item: INodeExecutionData, path: string | unknown): unknown {
+	// If path is not a string, treat it as direct data (from expression evaluation)
+	if (typeof path !== 'string') {
+		return path;
+	}
+
+	// If path is empty, return the entire json
+	if (!path || path.trim() === '') {
+		return item.json;
+	}
+
 	const parts = path.split('.').flatMap(part => {
 		// Handle array notation like 'items[0]'
 		const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
