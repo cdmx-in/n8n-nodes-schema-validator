@@ -1,6 +1,6 @@
 {
   "name": "@cdmx/n8n-nodes-schema-validator",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "AJV JSON Schema validation node for n8n workflows with support for multiple schemas, formats, and enhanced error messages",
   "keywords": [
     "n8n-community-node-package",
@@ -26,7 +26,6 @@
     "pnpm": ">=9.1"
   },
   "packageManager": "pnpm@9.1.4",
-  "main": "dist/nodes/SchemaValidator/SchemaValidator.node.js",
   "scripts": {
     "build": "tsc && gulp build:icons",
     "dev": "tsc --watch",
