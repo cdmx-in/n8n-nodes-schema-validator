@@ -49,4 +49,6 @@ export interface ValidatorOptions {
 	verbose: boolean;
 	useFormats: boolean;
 	useCustomErrors: boolean;
+	allowUnionTypes: boolean;
+	coerceTypes: boolean;
 }

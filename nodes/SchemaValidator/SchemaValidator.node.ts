@@ -261,6 +261,8 @@ export class SchemaValidator implements INodeType {
 			verbose: true,
 			useFormats: options.enableFormats !== false,
 			useCustomErrors: options.enableCustomErrors !== false,
+			allowUnionTypes: true,
+			coerceTypes: true,
 		};
 
 		const ajv = createAjvInstance(validatorOptions);

@@ -18,6 +18,8 @@ describe('validator', () => {
 				verbose: true,
 				useFormats: true,
 				useCustomErrors: true,
+				allowUnionTypes: true,
+				coerceTypes: true,
 			});
 
 			expect(ajv).toBeDefined();
@@ -30,6 +32,8 @@ describe('validator', () => {
 				verbose: true,
 				useFormats: false,
 				useCustomErrors: false,
+				allowUnionTypes: true,
+				coerceTypes: true,
 			});
 
 			expect(ajv).toBeDefined();
@@ -154,6 +158,8 @@ describe('validator', () => {
 				verbose: true,
 				useFormats: true,
 				useCustomErrors: true,
+				allowUnionTypes: true,
+				coerceTypes: true,
 			});
 
 			const schema = {
@@ -182,6 +188,8 @@ describe('validator', () => {
 				verbose: true,
 				useFormats: true,
 				useCustomErrors: true,
+				allowUnionTypes: true,
+				coerceTypes: true,
 			});
 
 			const schema = {
@@ -209,6 +217,8 @@ describe('validator', () => {
 				verbose: true,
 				useFormats: true,
 				useCustomErrors: true,
+				allowUnionTypes: true,
+				coerceTypes: true,
 			});
 
 			const schema = {
@@ -236,6 +246,8 @@ describe('validator', () => {
 				verbose: true,
 				useFormats: true,
 				useCustomErrors: true,
+				allowUnionTypes: true,
+				coerceTypes: true,
 			});
 
 			const schema = {
@@ -343,6 +355,8 @@ describe('validator', () => {
 				verbose: true,
 				useFormats: true,
 				useCustomErrors: true,
+				allowUnionTypes: true,
+				coerceTypes: true,
 			});
 
 			const schema = {

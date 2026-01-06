@@ -13,6 +13,8 @@ export function createAjvInstance(options: ValidatorOptions): Ajv {
 		allErrors: options.allErrors,
 		strict: options.strict,
 		verbose: options.verbose,
+		allowUnionTypes: options.allowUnionTypes,
+		coerceTypes: options.coerceTypes,
 	};
 
 	const ajv = new Ajv(ajvOptions);
@@ -39,6 +41,8 @@ const defaultAjv = createAjvInstance({
 	verbose: true,
 	useFormats: true,
 	useCustomErrors: true,
+	allowUnionTypes: true,
+	coerceTypes: true,
 });
 
 /**
