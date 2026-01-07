@@ -218,6 +218,20 @@ export class SchemaValidator implements INodeType {
 						description: 'Whether to collect all errors instead of stopping at first error',
 					},
 					{
+						displayName: 'Coerce Types',
+						name: 'coerceTypes',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to coerce data types (e.g., convert strings to numbers) during validation',
+					},
+					{
+						displayName: 'Allow Union Types',
+						name: 'allowUnionTypes',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to allow union types with type coercion',
+					},
+					{
 						displayName: 'Include Error Details',
 						name: 'includeErrorDetails',
 						type: 'boolean',
@@ -250,6 +264,8 @@ export class SchemaValidator implements INodeType {
 			enableCustomErrors?: boolean;
 			strictMode?: boolean;
 			allErrors?: boolean;
+			coerceTypes?: boolean;
+			allowUnionTypes?: boolean;
 			includeErrorDetails?: boolean;
 			includeOriginalData?: boolean;
 		};
@@ -261,8 +277,8 @@ export class SchemaValidator implements INodeType {
 			verbose: true,
 			useFormats: options.enableFormats !== false,
 			useCustomErrors: options.enableCustomErrors !== false,
-			allowUnionTypes: true,
-			coerceTypes: true,
+			allowUnionTypes: options.allowUnionTypes !== false,
+			coerceTypes: options.coerceTypes !== false,
 		};
 
 		const ajv = createAjvInstance(validatorOptions);
