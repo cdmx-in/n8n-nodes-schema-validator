@@ -1,6 +1,6 @@
 {
   "name": "@cdmx/n8n-nodes-schema-validator",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "AJV JSON Schema validation node for n8n workflows with support for multiple schemas, formats, and enhanced error messages",
   "keywords": [
     "n8n-community-node-package",
@@ -44,7 +44,7 @@
     "dist"
   ],
   "n8n": {
-    "n8nNodesApiVersion": 1,
+    "n8nNodesApiVersion": 2,
     "credentials": [],
     "nodes": [
       "dist/nodes/SchemaValidator/SchemaValidator.node.js"
