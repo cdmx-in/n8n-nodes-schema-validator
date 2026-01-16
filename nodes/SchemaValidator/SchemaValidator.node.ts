@@ -514,3 +514,6 @@ function executeMultipleSchemaMode(
 		}
 	}
 }
+
+export default SchemaValidator;
+
