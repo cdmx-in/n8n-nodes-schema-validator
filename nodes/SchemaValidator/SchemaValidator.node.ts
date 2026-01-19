@@ -32,8 +32,7 @@ export class SchemaValidator implements INodeType {
 			name: 'Schema Validator',
 		},
 		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main, NodeConnectionTypes.Main],
-		outputNames: ['Valid', 'Invalid'],
+		outputs: `={{$parameter["options"]?.singleOutput ? [{"type": "${NodeConnectionTypes.Main}", "displayName": "Output"}] : [{"type": "${NodeConnectionTypes.Main}", "displayName": "Valid"}, {"type": "${NodeConnectionTypes.Main}", "displayName": "Invalid"}]}}`,
 		properties: [
 			{
 				displayName: 'Validation Mode',
