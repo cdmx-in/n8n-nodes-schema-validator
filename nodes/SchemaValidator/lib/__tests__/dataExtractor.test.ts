@@ -66,6 +66,34 @@ describe('dataExtractor', () => {
 				'Custom JSON is required when Data Source is "Custom JSON"',
 			);
 		});
+
+		it('should handle array data automatically when input is an array', () => {
+			const arrayData = [
+				{ id: 1, name: 'Item 1' },
+				{ id: 2, name: 'Item 2' },
+			];
+
+			const result = extractDataToValidate(mockItem, 'customJson', arrayData);
+
+			expect(result).toEqual([
+				{ id: 1, name: 'Item 1' },
+				{ id: 2, name: 'Item 2' },
+			]);
+		});
+
+		it('should handle custom JSON that contains an array', () => {
+			const customJsonWithArray = JSON.stringify([
+				{ id: 1, name: 'Item 1' },
+				{ id: 2, name: 'Item 2' },
+			]);
+
+			const result = extractDataToValidate(mockItem, 'customJson', customJsonWithArray);
+
+			expect(result).toEqual([
+				{ id: 1, name: 'Item 1' },
+				{ id: 2, name: 'Item 2' },
+			]);
+		});
 	});
 
 	describe('extractDataFromPath', () => {

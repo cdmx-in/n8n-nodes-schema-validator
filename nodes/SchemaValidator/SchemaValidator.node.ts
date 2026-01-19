@@ -3,6 +3,7 @@ import type {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
+	IDataObject,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import type Ajv from 'ajv';
@@ -76,12 +77,12 @@ export class SchemaValidator implements INodeType {
 					{
 						name: 'Input Data',
 						value: 'entireItem',
-						description: 'Validate the JSON data from the input',
+						description: 'Validate the JSON data from the input (automatically handles arrays of objects)',
 					},
 					{
 						name: 'Custom JSON',
 						value: 'customJson',
-						description: 'Validate custom JSON data (supports expressions)',
+						description: 'Validate custom JSON data (supports expressions, automatically handles arrays of objects)',
 					},
 				],
 				default: 'entireItem',
@@ -106,6 +107,7 @@ export class SchemaValidator implements INodeType {
 					},
 				},
 			},
+
 			// Multiple Schemas Mode Properties
 			{
 				displayName: 'Schemas',
@@ -245,6 +247,13 @@ export class SchemaValidator implements INodeType {
 						default: false,
 						description: 'Whether to include the original input data in the output',
 					},
+					{
+						displayName: 'Single Output',
+						name: 'singleOutput',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to output all items to a single output with validation status instead of separating valid/invalid',
+					},
 				],
 			},
 		],
@@ -257,6 +266,7 @@ export class SchemaValidator implements INodeType {
 		const items = this.getInputData();
 		const validItems: INodeExecutionData[] = [];
 		const invalidItems: INodeExecutionData[] = [];
+		const allItems: INodeExecutionData[] = [];
 
 		const validationMode = this.getNodeParameter('validationMode', 0) as string;
 		const options = this.getNodeParameter('options', 0, {}) as {
@@ -268,6 +278,7 @@ export class SchemaValidator implements INodeType {
 			allowUnionTypes?: boolean;
 			includeErrorDetails?: boolean;
 			includeOriginalData?: boolean;
+			singleOutput?: boolean;
 		};
 
 		// Create AJV instance with configured options
@@ -284,11 +295,15 @@ export class SchemaValidator implements INodeType {
 		const ajv = createAjvInstance(validatorOptions);
 
 		if (validationMode === 'single') {
-			executeSingleSchemaMode(this, items, validItems, invalidItems, ajv, options);
+			executeSingleSchemaMode(this, items, validItems, invalidItems, allItems, ajv, options);
 		} else {
-			executeMultipleSchemaMode(this, items, validItems, invalidItems, ajv, options);
+			executeMultipleSchemaMode(this, items, validItems, invalidItems, allItems, ajv, options);
 		}
 
+		// Return output based on single output setting
+		if (options.singleOutput) {
+			return [allItems, []];
+		}
 		return [validItems, invalidItems];
 	}
 }
@@ -301,8 +316,13 @@ function executeSingleSchemaMode(
 	items: INodeExecutionData[],
 	validItems: INodeExecutionData[],
 	invalidItems: INodeExecutionData[],
+	allItems: INodeExecutionData[],
 	ajv: Ajv,
-	options: { includeErrorDetails?: boolean; includeOriginalData?: boolean },
+	options: { 
+		includeErrorDetails?: boolean; 
+		includeOriginalData?: boolean; 
+		singleOutput?: boolean; 
+	},
 ): void {
 	const schemaJson = context.getNodeParameter('jsonSchema', 0) as string;
 	const dataSource = context.getNodeParameter('dataSource', 0) as DataSource;
@@ -332,49 +352,77 @@ function executeSingleSchemaMode(
 					: undefined;
 
 			const dataToValidate = extractDataToValidate(item, dataSource, customJsonParam);
-			const result = validateData(validator, dataToValidate);
-
-			if (result.isValid) {
-				validItems.push({
-					...item,
-					pairedItem: itemIndex,
+			
+			// Check if data is an array and handle each item separately
+			if (Array.isArray(dataToValidate)) {
+				dataToValidate.forEach((arrayItem, arrayIndex) => {
+					const result = validateData(validator, arrayItem);
+					const outputItem = createValidationOutputItem(
+						item,
+						result,
+						options,
+						itemIndex,
+						`[${arrayIndex}]`,
+						arrayItem
+					);
+					
+					if (result.isValid) {
+						validItems.push(outputItem);
+					} else {
+						invalidItems.push(outputItem);
+					}
+					
+					if (options.singleOutput) {
+						allItems.push({
+							...outputItem,
+							json: {
+								...outputItem.json,
+								validationStatus: result.isValid ? 'valid' : 'invalid',
+							}
+						});
+					}
 				});
 			} else {
-				const errorMessage = formatValidationErrorMessage(result.errors);
-				const outputItem: INodeExecutionData = {
-					json: options.includeOriginalData
-						? {
-								...item.json,
-								validationErrors: options.includeErrorDetails !== false ? result.errors : undefined,
-								validationMessage: errorMessage,
-							}
-						: {
-								validationErrors: options.includeErrorDetails !== false ? result.errors : undefined,
-								validationMessage: errorMessage,
-							},
-					pairedItem: itemIndex,
-				};
-				if (options.includeOriginalData && item.binary) {
-					outputItem.binary = item.binary;
+				// Handle single item validation
+				const result = validateData(validator, dataToValidate);
+				const outputItem = createValidationOutputItem(
+					item,
+					result,
+					options,
+					itemIndex,
+					undefined,
+					dataToValidate
+				);
+
+				if (result.isValid) {
+					validItems.push(outputItem);
+				} else {
+					invalidItems.push(outputItem);
 				}
-				invalidItems.push(outputItem);
+				
+				if (options.singleOutput) {
+					allItems.push({
+						...outputItem,
+						json: {
+							...outputItem.json,
+							validationStatus: result.isValid ? 'valid' : 'invalid',
+						}
+					});
+				}
 			}
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : String(error);
-			const errorJson = options.includeOriginalData
-				? {
-						...item.json,
-						validationErrors: [{ field: '/', message: errorMessage, keyword: 'parse', params: {} }],
-						validationMessage: errorMessage,
+			const errorItem = createErrorOutputItem(item, error, options, itemIndex);
+			invalidItems.push(errorItem);
+			
+			if (options.singleOutput) {
+				allItems.push({
+					...errorItem,
+					json: {
+						...errorItem.json,
+						validationStatus: 'invalid',
 					}
-				: {
-						validationErrors: [{ field: '/', message: errorMessage, keyword: 'parse', params: {} }],
-						validationMessage: errorMessage,
-					};
-			invalidItems.push({
-				json: errorJson,
-				pairedItem: itemIndex,
-			});
+				});
+			}
 		}
 	}
 }
@@ -387,8 +435,13 @@ function executeMultipleSchemaMode(
 	items: INodeExecutionData[],
 	validItems: INodeExecutionData[],
 	invalidItems: INodeExecutionData[],
+	allItems: INodeExecutionData[],
 	ajv: Ajv,
-	options: { includeErrorDetails?: boolean; includeOriginalData?: boolean },
+	options: { 
+		includeErrorDetails?: boolean; 
+		includeOriginalData?: boolean; 
+		singleOutput?: boolean; 
+	},
 ): void {
 	const schemasParam = context.getNodeParameter('schemas', 0) as {
 		schemaItems?: Array<{
@@ -484,10 +537,22 @@ function executeMultipleSchemaMode(
 			: schemaResults.some(r => r.isValid);
 
 		if (isItemValid) {
-			validItems.push({
+			const validItem = {
 				...item,
 				pairedItem: itemIndex,
-			});
+			};
+			validItems.push(validItem);
+			
+			if (options.singleOutput) {
+				allItems.push({
+					...validItem,
+					json: {
+						...validItem.json,
+						validationStatus: 'valid',
+						validationResults: options.includeErrorDetails !== false ? schemaResults : undefined,
+					}
+				});
+			}
 		} else {
 			const failedSchemas = schemaResults.filter(r => !r.isValid);
 			const errorMessages = failedSchemas.map(
@@ -511,8 +576,94 @@ function executeMultipleSchemaMode(
 				outputItem.binary = item.binary;
 			}
 			invalidItems.push(outputItem);
+			
+			if (options.singleOutput) {
+				allItems.push({
+					...outputItem,
+					json: {
+						...outputItem.json,
+						validationStatus: 'invalid',
+					}
+				});
+			}
 		}
 	}
+}
+
+/**
+ * Creates a validation output item with proper error formatting.
+ */
+function createValidationOutputItem(
+	originalItem: INodeExecutionData,
+	result: any,
+	options: { includeErrorDetails?: boolean; includeOriginalData?: boolean },
+	itemIndex: number,
+	itemPath?: string,
+	validatedData?: unknown,
+): INodeExecutionData {
+	if (result.isValid) {
+		return {
+			...originalItem,
+			pairedItem: itemIndex,
+		};
+	}
+
+	const errorMessage = formatValidationErrorMessage(result.errors);
+	const itemIdentifier = itemPath ? ` ${itemPath}` : '';
+	
+	const baseJson = options.includeOriginalData
+		? { ...originalItem.json }
+		: {};
+	
+	const validationInfo: Record<string, unknown> = {
+		validationErrors: options.includeErrorDetails !== false ? result.errors : undefined,
+		validationMessage: errorMessage + itemIdentifier,
+	};
+	
+	if (validatedData) {
+		validationInfo.validatedData = validatedData;
+	}
+	
+	const outputItem: INodeExecutionData = {
+		json: {
+			...baseJson,
+			...validationInfo,
+		} as IDataObject,
+		pairedItem: itemIndex,
+	};
+	
+	if (options.includeOriginalData && originalItem.binary) {
+		outputItem.binary = originalItem.binary;
+	}
+	
+	return outputItem;
+}
+
+/**
+ * Creates an error output item for processing errors.
+ */
+function createErrorOutputItem(
+	originalItem: INodeExecutionData,
+	error: unknown,
+	options: { includeOriginalData?: boolean },
+	itemIndex: number,
+): INodeExecutionData {
+	const errorMessage = error instanceof Error ? error.message : String(error);
+	const errorJson = options.includeOriginalData
+		? {
+				...originalItem.json,
+				validationErrors: [{ field: '/', message: errorMessage, keyword: 'parse', params: {} }],
+				validationMessage: errorMessage,
+			}
+		: {
+				validationErrors: [{ field: '/', message: errorMessage, keyword: 'parse', params: {} }],
+				validationMessage: errorMessage,
+			};
+	
+	return {
+		json: errorJson,
+		pairedItem: itemIndex,
+	};
 }
 
 export default SchemaValidator;

@@ -23,7 +23,7 @@ export function extractCustomJsonData(customJsonParam: string | object): unknown
  * @param item Input item
  * @param dataSource Data source type
  * @param customJsonParam Custom JSON parameter (required if dataSource is 'customJson')
- * @returns Data to validate
+ * @returns Data to validate or array of data items for array mode
  */
 export function extractDataToValidate(
 	item: INodeExecutionData,
@@ -36,6 +36,7 @@ export function extractDataToValidate(
 		}
 		return extractCustomJsonData(customJsonParam);
 	}
+	
 	return item.json;
 }
 
