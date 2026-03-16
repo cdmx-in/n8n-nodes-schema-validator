@@ -9,6 +9,16 @@ import {
 } from '../validator';
 import type { ValidationError } from '../../types';
 
+const defaultAjv = createAjvInstance({
+	allErrors: true,
+	strict: true,
+	verbose: true,
+	useFormats: true,
+	useCustomErrors: true,
+	allowUnionTypes: true,
+	coerceTypes: true,
+});
+
 describe('validator', () => {
 	describe('createAjvInstance', () => {
 		it('should create AJV instance with default options', () => {
@@ -49,7 +59,7 @@ describe('validator', () => {
 				},
 			};
 
-			const result = isValidJsonSchema(schema);
+			const result = isValidJsonSchema(schema, defaultAjv);
 			expect(result.isValid).toBe(true);
 			expect(result.error).toBeUndefined();
 		});
@@ -69,7 +79,7 @@ describe('validator', () => {
 				},
 			};
 
-			const result = isValidJsonSchema(schema);
+			const result = isValidJsonSchema(schema, defaultAjv);
 			expect(result.isValid).toBe(true);
 		});
 
@@ -78,7 +88,7 @@ describe('validator', () => {
 				type: 'invalid-type',
 			};
 
-			const result = isValidJsonSchema(schema);
+			const result = isValidJsonSchema(schema, defaultAjv);
 			expect(result.isValid).toBe(false);
 			expect(result.error).toBeDefined();
 		});
@@ -93,7 +103,7 @@ describe('validator', () => {
 				},
 			};
 
-			const validator = createValidator(schema);
+			const validator = createValidator(schema, defaultAjv);
 			expect(validator).toBeDefined();
 			expect(typeof validator).toBe('function');
 		});
@@ -109,7 +119,7 @@ describe('validator', () => {
 				required: ['name'],
 			};
 
-			const validator = createValidator(schema);
+			const validator = createValidator(schema, defaultAjv);
 			const result = validateData(validator, { name: 'John' });
 
 			expect(result.isValid).toBe(true);
@@ -125,7 +135,7 @@ describe('validator', () => {
 				required: ['name'],
 			};
 
-			const validator = createValidator(schema);
+			const validator = createValidator(schema, defaultAjv);
 			const result = validateData(validator, {});
 
 			expect(result.isValid).toBe(false);
@@ -141,7 +151,7 @@ describe('validator', () => {
 				},
 			};
 
-			const validator = createValidator(schema);
+			const validator = createValidator(schema, defaultAjv);
 			const result = validateData(validator, { age: 'not a number' });
 
 			expect(result.isValid).toBe(false);
@@ -279,7 +289,7 @@ describe('validator', () => {
 				required: ['name'],
 			};
 
-			const validator = createValidator(schema);
+			const validator = createValidator(schema, defaultAjv);
 			validator({}); // Trigger validation
 
 			const errors = transformValidationErrors(validator);

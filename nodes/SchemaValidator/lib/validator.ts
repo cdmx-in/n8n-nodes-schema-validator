@@ -33,27 +33,14 @@ export function createAjvInstance(options: ValidatorOptions): Ajv {
 }
 
 /**
- * Default AJV instance with formats and custom errors enabled.
- */
-const defaultAjv = createAjvInstance({
-	allErrors: true,
-	strict: true,
-	verbose: true,
-	useFormats: true,
-	useCustomErrors: true,
-	allowUnionTypes: true,
-	coerceTypes: true,
-});
-
-/**
  * Validates if a schema is a valid JSON Schema.
  * @param schema Schema object to validate
- * @param ajvInstance Optional custom AJV instance
+ * @param ajvInstance AJV instance to use for validation
  * @returns Object with isValid flag and optional error message
  */
 export function isValidJsonSchema(
 	schema: object,
-	ajvInstance: Ajv = defaultAjv
+	ajvInstance: Ajv,
 ): { isValid: boolean; error?: string } {
 	try {
 		ajvInstance.compile(schema);
@@ -72,7 +59,7 @@ export function isValidJsonSchema(
  */
 export function createValidator(
 	schema: object,
-	ajvInstance: Ajv = defaultAjv
+	ajvInstance: Ajv,
 ): ValidateFunction {
 	return ajvInstance.compile(schema);
 }

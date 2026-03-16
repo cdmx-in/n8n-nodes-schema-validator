@@ -5,7 +5,7 @@ import type {
 	INodeTypeDescription,
 	IDataObject,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 import type Ajv from 'ajv';
 import {
 	createAjvInstance,
@@ -31,8 +31,8 @@ export class SchemaValidator implements INodeType {
 		defaults: {
 			name: 'Schema Validator',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: `={{$parameter["options"]?.singleOutput ? [{"type": "${NodeConnectionTypes.Main}", "displayName": "Output"}] : [{"type": "${NodeConnectionTypes.Main}", "displayName": "Valid"}, {"type": "${NodeConnectionTypes.Main}", "displayName": "Invalid"}]}}`,
+		inputs: ['main'],
+		outputs: `={{$parameter["options"]?.singleOutput ? [{"type": "main", "displayName": "Output"}] : [{"type": "main", "displayName": "Valid"}, {"type": "main", "displayName": "Invalid"}]}}`,
 		properties: [
 			{
 				displayName: 'Validation Mode',

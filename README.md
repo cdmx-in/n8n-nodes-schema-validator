@@ -12,6 +12,8 @@ Advanced JSON Schema validation node for [n8n](https://n8n.io/) workflows. Valid
 - 💬 **Custom Error Messages** - Define custom error messages in your schemas via [ajv-errors](https://github.com/ajv-validator/ajv-errors)
 - 🔀 **Dual Output** - Valid items go to one output, invalid items go to another
 - 🎯 **Data Path Extraction** - Validate specific parts of your data using JSON paths
+- 📋 **Automatic Array Handling** - Automatically detects and validates arrays of objects
+- 🎯 **Single Output Mode** - Combine valid and invalid items into one output with status
 - ⚙️ **Configurable Options** - Control strict mode, all errors collection, and more
 
 ## Installation
@@ -108,15 +110,64 @@ Use ajv-errors syntax to define custom messages:
 }
 ```
 
+### Automatic Array Handling
+
+NEW! The validator automatically detects when your data is an array and validates each object individually. No configuration needed!
+
+**Example Input:**
+```json
+[
+  { "id": 1, "name": "Alice", "email": "alice@example.com" },
+  { "id": 2, "name": "Bob", "email": "invalid-email" },
+  { "id": 3, "name": "Charlie", "email": "charlie@example.com" }
+]
+```
+
+**Configuration:**
+- **Data Source**: `Input Data` or `Custom JSON`
+- **Schema**: User object schema (for individual objects, not the array)
+
+**Result**: Each user object is validated individually, creating separate output items for valid/invalid users automatically.
+
+### Single Output Mode
+
+NEW! Instead of separating valid/invalid items into two outputs, combine them into one output with validation status.
+
+**Enable in Options:**
+- **Single Output**: `true`
+
+**Output includes:**
+- `validationStatus`: `"valid"` or `"invalid"`
+- All original data
+- Error details (if invalid)
+
+**Example Output:**
+```json
+[
+  { "name": "Alice", "validationStatus": "valid" },
+  { 
+    "name": "Bob", 
+    "validationStatus": "invalid",
+    "validationErrors": [...],
+    "validationMessage": "..."
+  }
+]
+```
+
 ## Output
 
+### Default Mode (Dual Output)
 ### Valid Items (Output 1)
 Items that pass validation are output unchanged.
 
 ### Invalid Items (Output 2)
 Items that fail validation include:
-- `_validationMessage`: Human-readable error summary
-- `_validationErrors` (single mode) or `_validationResults` (multiple mode): Detailed error information
+- `validationMessage`: Human-readable error summary
+- `validationErrors` (single mode) or `validationResults` (multiple mode): Detailed error information
+
+### Single Output Mode
+When enabled, all items go to Output 1 with additional field:
+- `validationStatus`: `"valid"` or `"invalid"`
 
 ## Options
 
@@ -127,6 +178,8 @@ Items that fail validation include:
 | Strict Mode | `true` | Enable strict schema validation |
 | All Errors | `true` | Collect all errors vs. stop at first |
 | Include Error Details | `true` | Include detailed errors in output |
+| Include Original Data | `false` | Include original input data in output |
+| Single Output | `false` | Combine valid/invalid items into one output |
 
 ## Development
 
