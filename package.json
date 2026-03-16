@@ -1,6 +1,6 @@
 {
   "name": "@cdmx/n8n-nodes-schema-validator",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "AJV JSON Schema validation node for n8n workflows with support for multiple schemas, formats, and enhanced error messages",
   "keywords": [
     "n8n-community-node-package",
@@ -22,10 +22,8 @@
     "url": "https://github.com/cdmx-in/n8n-nodes-schema-validator.git"
   },
   "engines": {
-    "node": ">=18.10",
-    "pnpm": ">=9.1"
+    "node": ">=18.10"
   },
-  "packageManager": "pnpm@9.1.4",
   "scripts": {
     "build": "node esbuild.js && tsc --emitDeclarationOnly && gulp build:icons",
     "dev": "tsc --watch",
@@ -68,9 +66,6 @@
     "typescript": "^5.4.5"
   },
   "peerDependencies": {
-    "n8n-workflow": "^1.0.0"
-  },
-  "overrides": {
-    "form-data": "^4.0.5"
+    "n8n-workflow": "*"
   }
 }
